@@ -10,29 +10,51 @@ namespace select_properties_from_class
     {
         static void Main()
         {
-            DataTable dt = ConvertToDataTable(testList);
             Console.WriteLine("D I S P L A Y    P O P U L A T E D    T A B L E");
-            DisplayTableInConsole(dt);
+            DisplayTableInConsole(ToDataTable(testList));
+            Console.WriteLine();
+            Console.WriteLine("D I S P L A Y    P O P U L A T E D    T A B L E");
+            DisplayTableInConsole(ToDataTableAlt(testList));
 
             // Pause
             Console.ReadKey();
         }
-        private static DataTable ConvertToDataTable<T>(IEnumerable<T> data) where T : IMyConstraint
+        private static DataTable ToDataTable<T>(IEnumerable<T> data) where T : IMyConstraint
         {
             DataTable table = new DataTable();
-            Type type = typeof(T), propertyType;
+            Type type = typeof(T);
             // "If" you already know the names of the properties you want...
             string[] names = new string[] { "type", "id", "name", "city" };
             
             foreach (var name in names)     // Add columns 
             {
-                propertyType = type.GetProperty(name).PropertyType;
-                table.Columns.Add(name).DataType = propertyType;
+                table.Columns.Add(name, type.GetProperty(name).PropertyType);
             }            
             foreach (var item in data)      // Add rows 
             {
                 object[] values =
-                    names.Select(name => type.GetProperty(name).GetValue(item)).ToArray();
+                    names
+                    .Select(name => type.GetProperty(name).GetValue(item))
+                    .ToArray();
+                table.Rows.Add(values);
+            }
+            return table;
+        }
+        private static DataTable ToDataTableAlt<T>(IEnumerable<T> data) where T : IMyConstraint
+        {
+            DataTable table = new DataTable();
+            PropertyInfo[] propertyInfos = typeof(IMyConstraint).GetProperties();
+
+            foreach (var propertyInfo in propertyInfos)     // Add columns 
+            {
+                table.Columns.Add(propertyInfo.Name, propertyInfo.PropertyType);
+            }
+            foreach (var item in data)      // Add rows 
+            {
+                object[] values =
+                    propertyInfos
+                    .Select(propertyInfo => propertyInfo.GetValue(item))
+                    .ToArray();
                 table.Rows.Add(values);
             }
             return table;
